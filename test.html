@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>撞期檢查測試</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1d2329;
+    --muted: #5f6b76;
+    --border: #dde2e7;
+    --pass: #1f7a3d;
+    --pass-bg: #e6f4ea;
+    --fail: #b3261e;
+    --fail-bg: #fce8e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  }
+  main { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+  .summary {
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .summary.pass { background: var(--pass-bg); color: var(--pass); border-color: var(--pass); }
+  .summary.fail { background: var(--fail-bg); color: var(--fail); border-color: var(--fail); }
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { background: #eef1f4; font-weight: 600; }
+  td.result { text-align: center; font-size: 18px; width: 56px; }
+  tr.fail td { background: var(--fail-bg); }
+  .desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  code { font-family: Consolas, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1>撞期檢查測試（findConflicts）</h1>
+  <p class="sub">測試 app.js 中的 <code>findConflicts(existingBookings, newBookings)</code>。時段以「開始小時–結束小時」表示，結束時間不含。</p>
+  <div id="summary" class="summary">測試執行中…</div>
+  <div id="results"></div>
+</main>
+
+<script src="app.js"></script>
+<script>
+'use strict';
+
+const DATE = '2026-10-20';
+
+// 建立一筆預約：開始小時 start、結束小時 end（不含）
+function booking(roomId, start, end, extra) {
+  return Object.assign({ roomId, date: DATE, startHour: start, duration: end - start, cancelled: false }, extra);
+}
+
+// 將衝突清單轉成可讀文字
+function describe(conflicts) {
+  if (!Array.isArray(conflicts)) return '（非陣列）' + JSON.stringify(conflicts);
+  if (conflicts.length === 0) return '無衝突（允許預約）';
+  return '衝突：' + conflicts
+    .map(c => c.date + ' ' + c.hours.map(h => String(h).padStart(2, '0') + ':00').join('、'))
+    .join('；');
+}
+
+const groups = [
+  {
+    title: '一般情況',
+    cases: [
+      {
+        name: '完全相同時段',
+        desc: '已有 第一會議室 10–12，新增 第一會議室 10–12',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-1', 10, 12)],
+        expected: [{ date: DATE, hours: [10, 11] }],
+      },
+      {
+        name: '完全錯開的時段',
+        desc: '已有 第一會議室 08–10，新增 第一會議室 14–16',
+        existing: [booking('room-1', 8, 10)],
+        incoming: [booking('room-1', 14, 16)],
+        expected: [],
+      },
+    ],
+  },
+  {
+    title: '邊界情況',
+    cases: [
+      {
+        name: '部分重疊（前段）',
+        desc: '已有 10–12，新增 09–11：新預約的後半與既有預約的前段重疊',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-1', 9, 11)],
+        expected: [{ date: DATE, hours: [10] }],
+      },
+      {
+        name: '部分重疊（後段）',
+        desc: '已有 10–12，新增 11–13：新預約的前半與既有預約的後段重疊',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-1', 11, 13)],
+        expected: [{ date: DATE, hours: [11] }],
+      },
+      {
+        name: '完全包含（新預約包住既有預約）',
+        desc: '已有 10–12，新增 09–13',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-1', 9, 13)],
+        expected: [{ date: DATE, hours: [10, 11] }],
+      },
+      {
+        name: '完全包含（既有預約包住新預約）',
+        desc: '已有 09–13，新增 10–12',
+        existing: [booking('room-1', 9, 13)],
+        incoming: [booking('room-1', 10, 12)],
+        expected: [{ date: DATE, hours: [10, 11] }],
+      },
+      {
+        name: '緊鄰時段（之後）應允許',
+        desc: '已有 10–12，新增 12–14',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-1', 12, 14)],
+        expected: [],
+      },
+      {
+        name: '緊鄰時段（之前）應允許',
+        desc: '已有 12–14，新增 10–12',
+        existing: [booking('room-1', 12, 14)],
+        incoming: [booking('room-1', 10, 12)],
+        expected: [],
+      },
+      {
+        name: '不同會議室同時段應允許',
+        desc: '已有 第一會議室 10–12，新增 第二會議室 10–12',
+        existing: [booking('room-1', 10, 12)],
+        incoming: [booking('room-2', 10, 12)],
+        expected: [],
+      },
+    ],
+  },
+];
+
+let passed = 0;
+let total = 0;
+const resultsEl = document.getElementById('results');
+
+for (const group of groups) {
+  const h2 = document.createElement('h2');
+  h2.textContent = group.title;
+  resultsEl.appendChild(h2);
+
+  const table = document.createElement('table');
+  table.innerHTML = '<thead><tr><th>測試名稱</th><th>預期值</th><th>實際值</th><th>結果</th></tr></thead>';
+  const tbody = document.createElement('tbody');
+
+  for (const tc of group.cases) {
+    total++;
+    let actualText;
+    let ok = false;
+    try {
+      const actual = findConflicts(tc.existing, tc.incoming);
+      actualText = describe(actual);
+      ok = JSON.stringify(actual) === JSON.stringify(tc.expected);
+    } catch (err) {
+      actualText = '執行錯誤：' + err.message;
+    }
+    if (ok) passed++;
+
+    const tr = document.createElement('tr');
+    if (!ok) tr.className = 'fail';
+    const cells = [
+      { text: tc.name, desc: tc.desc },
+      { text: describe(tc.expected) },
+      { text: actualText },
+      { text: ok ? '✅' : '❌', cls: 'result' },
+    ];
+    for (const c of cells) {
+      const td = document.createElement('td');
+      td.textContent = c.text;
+      if (c.cls) td.className = c.cls;
+      if (c.desc) {
+        const d = document.createElement('div');
+        d.className = 'desc';
+        d.textContent = c.desc;
+        td.appendChild(d);
+      }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  resultsEl.appendChild(table);
+}
+
+const summaryEl = document.getElementById('summary');
+summaryEl.textContent = (passed === total ? '✅ ' : '❌ ') + '通過 ' + passed + ' 項／共 ' + total + ' 項';
+summaryEl.className = 'summary ' + (passed === total ? 'pass' : 'fail');
+</script>
+</body>
+</html>
