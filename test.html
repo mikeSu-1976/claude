@@ -65,6 +65,15 @@
 <script>
 'use strict';
 
+// app.js 載入失敗時（找不到檔案，或在預覽窗格以 data: 網址開啟），直接提示原因，不執行測試
+if (typeof findConflicts !== 'function') {
+  const summaryEl = document.getElementById('summary');
+  summaryEl.className = 'summary fail';
+  summaryEl.textContent = '❌ 無法載入 app.js，未執行任何測試。請確認 app.js 與 test.html 在同一個資料夾，'
+    + '並在檔案總管中雙擊 test.html，以 Chrome 或 Edge 開啟（網址列應為 file:///…/test.html，而不是預覽窗格或 data: 網址）。';
+  throw new Error('findConflicts 未定義：app.js 未載入');
+}
+
 const DATE = '2026-10-20';
 
 // 建立一筆預約：開始小時 start、結束小時 end（不含）
