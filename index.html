@@ -215,7 +215,11 @@
     font-weight: 700; font-size: 14px; line-height: 1.3;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .b-name { font-size: 12.5px; opacity: 0.92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .b-name {
+    display: flex; align-items: center; gap: 5px; min-width: 0;
+    font-size: 12.5px; white-space: nowrap;
+  }
+  .b-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; opacity: 0.92; }
   .b-time {
     font-family: var(--font-sign); font-variant-numeric: tabular-nums;
     font-size: 12.5px; opacity: 0.92; white-space: nowrap;
@@ -232,7 +236,7 @@
     font-size: 18px; line-height: 1.3; white-space: normal;
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   }
-  .booking.is-tall .b-name { font-size: 14px; }
+  .booking.is-tall .b-name { font-size: 14px; gap: 6px; }
   .booking.is-tall .b-time { margin-top: auto; font-size: 16px; font-weight: 600; }
 
   /* 3 小時以上：主題更大，並顯示備註 */
@@ -249,6 +253,50 @@
     background: color-mix(in srgb, var(--room) 22%, var(--white));
     color: var(--ink-2);
   }
+
+  /* 使用者頭像：姓名第一個字＋依姓名決定的顏色，白色外框讓它在任何會議室色上都看得清楚 */
+  .avatar {
+    --size: 18px;
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: var(--size); height: var(--size); border-radius: 50%;
+    background: var(--user); color: #ffffff;
+    box-shadow: 0 0 0 1.5px #ffffff;
+    font-family: var(--font-ui); font-weight: 700; font-size: calc(var(--size) * 0.56);
+    line-height: 1; letter-spacing: 0; user-select: none;
+  }
+  /* 自選符號（表情符號）：字稍大，用表情字型 */
+  .avatar.is-symbol {
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", var(--font-ui);
+    font-weight: 400; font-size: calc(var(--size) * 0.64);
+  }
+  .booking.is-tall .avatar { --size: 22px; }
+  .booking.is-huge .avatar { --size: 26px; }
+  .booking.is-past .avatar { opacity: 0.7; }
+
+  /* 選定某位預約人時：其他人的預約淡化，此人的預約加外框 */
+  .booking { transition: opacity 0.15s; }
+  .booking.is-dimmed { opacity: 0.28; }
+  .booking.is-focused { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--user); }
+
+  /* 本日預約人列 */
+  .people {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px;
+    margin-bottom: 10px; font-size: 13px;
+  }
+  .people-label { color: var(--ink-2); margin-right: 2px; }
+  .person {
+    display: inline-flex; align-items: center; gap: 6px; height: 30px;
+    padding: 0 10px 0 5px; border: 1px solid var(--line); border-radius: 15px;
+    background: var(--surface); font-size: 13px;
+  }
+  .person:hover { border-color: var(--ink-2); background: var(--white); }
+  .person .avatar { --size: 20px; box-shadow: none; }
+  .person .p-count { color: var(--muted); font-family: var(--font-sign); font-variant-numeric: tabular-nums; }
+  .person[aria-pressed="true"] { border-color: var(--user); background: color-mix(in srgb, var(--user) 12%, var(--white)); font-weight: 700; }
+  .people-clear { border: none; background: none; color: var(--ink-2); font-size: 13px; text-decoration: underline; padding: 0 4px; }
+
+  dl.facts .who { display: flex; align-items: center; gap: 8px; }
+  dl.facts .who .avatar { --size: 24px; box-shadow: none; }
 
   /* 「現在」時間線 */
   .now-line {
@@ -339,6 +387,18 @@
   .end-options input:checked + span small { color: #c5d0cd; }
   .end-options input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+  /* 頭像符號選項 */
+  .avatar-options { display: flex; flex-wrap: wrap; gap: 6px; border: none; padding: 0; margin: 0; }
+  .avatar-options label { position: relative; }
+  .avatar-options input { position: absolute; opacity: 0; pointer-events: none; }
+  .avatar-options .avatar {
+    --size: 32px; box-shadow: none; cursor: pointer;
+    outline: 2px solid transparent; outline-offset: 2px;
+  }
+  .avatar-options label:hover .avatar { outline-color: var(--line); }
+  .avatar-options input:checked + .avatar { outline-color: var(--ink); }
+  .avatar-options input:focus-visible + .avatar { outline: 2px dashed var(--ink); }
+
   .switch-row { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 14px; }
   .switch-row input { width: 18px; height: 18px; accent-color: var(--ink); }
   .repeat-box { margin: 10px 0 16px; padding: 12px 14px; background: var(--paper); border-radius: 6px; }
@@ -407,8 +467,10 @@
     .date-weekday { font-size: 15px; }
     .plate-status { white-space: normal; align-items: flex-start; line-height: 1.35; }
     .plate-status .dot { margin-top: 4px; }
-    .date-tools { margin-left: 0; width: 100%; }
-    .date-tools .date-input { flex: 1; min-width: 0; }
+    .date-tools { margin-left: 0; width: 100%; flex-wrap: wrap; }
+    .date-tools .date-input { flex: 1; min-width: 140px; }
+    /* 擠不下時換到下一列並填滿寬度 */
+    #exportCsvBtn { flex: 1 0 auto; }
     .board { padding: 0 6px 8px; }
     .plate { flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px; }
     .plate-num { font-size: 30px; }
@@ -425,11 +487,13 @@
     .slot-free .slot-idle { display: none; }
     .now-line::before { display: none; }
     .toast { left: 16px; right: 16px; }
+    .booking .avatar, .booking.is-tall .avatar, .booking.is-huge .avatar { --size: 16px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     dialog.sheet[open] { animation: none; }
     .toast { transition: none; }
+    .booking { transition: none; }
   }
 </style>
 </head>
@@ -453,6 +517,7 @@
         <button type="button" class="icon-btn" id="nextDayBtn" aria-label="後一天" title="後一天（→）">›</button>
         <button type="button" class="text-btn" id="todayBtn">回到今天</button>
         <input type="date" class="date-input" id="datePicker" aria-label="選擇日期">
+        <button type="button" class="text-btn" id="exportCsvBtn" title="下載這一天的預約清單">匯出 CSV</button>
       </div>
     </div>
 
@@ -462,6 +527,7 @@
 
 <main class="wrap">
   <div class="banner" id="storageBanner" role="alert" hidden></div>
+  <div class="people" id="peopleBar" aria-label="本日預約人" hidden></div>
   <section class="board" aria-label="會議室時段表">
     <div class="plates" id="plates"></div>
     <div class="grid-body" id="gridBody"></div>
@@ -471,6 +537,7 @@
       <span><i class="sw sw-free"></i>空檔，點一下就能預約</span>
       <span><i class="sw sw-booked"></i>已預約，點一下查看或取消</span>
       <span>↻ 每週重複</span>
+      <span><i class="avatar" style="--user:#475569;box-shadow:none" aria-hidden="true">王</i>預約人頭像（同一人同一色）</span>
       <span><i class="sw sw-past"></i>已過去</span>
     </div>
     <div id="lastUpdated"></div>
@@ -503,6 +570,11 @@
         <input type="text" class="input" id="bookName" maxlength="50" autocomplete="off">
         <span class="field-error" id="bookNameError"></span>
       </label>
+
+      <div class="field">
+        <span class="field-label">頭像符號<span class="opt">選填，同一個名字的所有預約都會換成這個符號</span></span>
+        <fieldset class="avatar-options" id="bookAvatarOptions" aria-label="頭像符號"></fieldset>
+      </div>
 
       <label class="field" id="bookTitleField">
         <span class="field-label">會議主題<span class="req">*</span></span>
@@ -593,6 +665,7 @@ const CLOSE_HOUR = 18;          // 營業結束（不含），最後一格為 17
 const BOOKING_DAYS = 28;        // 可預約範圍：今天起 28 天（含今天）
 const STORAGE_KEY = 'meetingRoomBooking.v1';
 const LAST_NAME_KEY = 'meetingRoomBooking.lastName';  // 記住上次填寫的姓名，只為方便填表
+const AVATAR_KEY = 'meetingRoomBooking.avatars';      // 每位使用者自選的頭像符號
 const DATA_VERSION = 1;
 const REFRESH_MS = 60 * 1000;   // 看板自動重新讀取間隔
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -801,6 +874,8 @@ function setLastName(name) {
 let viewDate = taipeiNow().date;  // 目前看板顯示的日期
 let bookings = [];                // 最近一次從 localStorage 讀到的資料
 let storageError = null;          // 資料損毀時記錄錯誤，並停止寫入
+let focusUser = null;             // 目前選定要凸顯的預約人（userKey），只存在畫面上
+let avatarPrefs = {};             // 最近一次讀到的頭像偏好
 
 const $ = id => document.getElementById(id);
 
@@ -821,6 +896,67 @@ function paintRoom(node, room) {
   node.style.setProperty('--on-room', room.onColor);
 }
 
+// ==================== 使用者頭像 ====================
+// 頭像顏色盤：彼此色相分開，並避開三間會議室的識別色，配白字
+const AVATAR_COLORS = [
+  '#c2410c', '#7c3aed', '#0f766e', '#be185d', '#4d7c0f',
+  '#1e3a8a', '#92400e', '#475569', '#b91c1c', '#0369a1',
+];
+
+// 同一個人的判斷依據：去頭尾空白、英文不分大小寫
+function userKey(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+// 由姓名算出固定的顏色，同名者在任何瀏覽器、任何時間都是同一色
+function userColor(name) {
+  const key = userKey(name);
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+// 頭像文字：取姓名第一個字（英文轉大寫），支援中文與表情符號
+function userInitial(name) {
+  const first = Array.from(String(name || '').trim())[0] || '?';
+  return first.toUpperCase();
+}
+
+// 使用者可自選的頭像符號；空字串代表「用姓名第一個字」
+const AVATAR_SYMBOLS = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐧', '🐙', '🌟', '🔥', '🌈', '🍀', '☕', '🎧', '🚀', '⚽'];
+
+// 頭像偏好：{ userKey: 符號 }，存在 localStorage，與預約資料分開，讀寫失敗不影響預約
+function loadAvatarPrefs() {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(AVATAR_KEY) || '{}');
+    return prefs && typeof prefs === 'object' && !Array.isArray(prefs) ? prefs : {};
+  } catch { return {}; }
+}
+function saveAvatarPref(name, symbol) {
+  try {
+    const prefs = loadAvatarPrefs();  // 先讀最新的，避免蓋掉其他分頁剛存的偏好
+    if (symbol) prefs[userKey(name)] = symbol;
+    else delete prefs[userKey(name)];
+    localStorage.setItem(AVATAR_KEY, JSON.stringify(prefs));
+    avatarPrefs = prefs;
+  } catch { /* 忽略 */ }
+}
+
+// 某人目前選用的符號（只接受清單內的符號，避免資料被竄改成怪字串）
+function userSymbol(name) {
+  const s = avatarPrefs[userKey(name)];
+  return AVATAR_SYMBOLS.includes(s) ? s : '';
+}
+
+// symbol 未指定時用此人已存的偏好；傳入空字串則強制顯示姓名第一個字
+function avatar(name, symbol) {
+  const s = symbol === undefined ? userSymbol(name) : symbol;
+  const a = el('span', s ? 'avatar is-symbol' : 'avatar', s || userInitial(name));
+  a.style.setProperty('--user', userColor(name));
+  a.setAttribute('aria-hidden', 'true');
+  return a;
+}
+
 function storageErrorMessage(err) {
   if (err instanceof StorageCorruptError) {
     return `這個瀏覽器裡的預約資料已損毀（${err.message}）。為了不覆蓋原有資料，已暫停預約與取消。`;
@@ -830,6 +966,7 @@ function storageErrorMessage(err) {
 
 // 重新讀取 localStorage 並重繪
 function refresh() {
+  avatarPrefs = loadAvatarPrefs();
   try {
     bookings = loadData().bookings;
     storageError = null;
@@ -844,6 +981,7 @@ function render() {
   const now = taipeiNow();
   renderHeader(now);
   renderPlates(now);
+  renderPeople();
   renderGrid(now);
 
   const banner = $('storageBanner');
@@ -930,6 +1068,46 @@ function roomStatus(room, now) {
   return status;
 }
 
+// 本日預約人：列出當天（未取消）預約的每一位使用者，點選可凸顯該人的預約
+function renderPeople() {
+  const bar = $('peopleBar');
+  bar.replaceChildren();
+  const people = new Map();  // userKey → { name, count }
+  for (const b of bookings) {
+    if (!isActive(b) || b.date !== viewDate) continue;
+    const key = userKey(b.name);
+    const p = people.get(key) || { name: b.name.trim(), count: 0 };
+    p.count++;
+    people.set(key, p);
+  }
+  // 選定的人當天沒有預約時，自動解除凸顯
+  if (focusUser && !people.has(focusUser)) focusUser = null;
+  bar.hidden = people.size === 0;
+  if (people.size === 0) return;
+
+  bar.append(el('span', 'people-label', '本日預約人'));
+  const sorted = [...people].sort((a, b) => b[1].count - a[1].count || a[1].name.localeCompare(b[1].name, 'zh-Hant'));
+  for (const [key, p] of sorted) {
+    const chip = el('button', 'person');
+    chip.type = 'button';
+    chip.style.setProperty('--user', userColor(p.name));
+    chip.setAttribute('aria-pressed', String(focusUser === key));
+    chip.title = focusUser === key ? '再點一次取消凸顯' : `只凸顯 ${p.name} 的預約`;
+    chip.append(avatar(p.name), el('span', null, p.name), el('span', 'p-count', `${p.count} 場`));
+    chip.addEventListener('click', () => {
+      focusUser = focusUser === key ? null : key;
+      render();
+    });
+    bar.append(chip);
+  }
+  if (focusUser) {
+    const clear = el('button', 'people-clear', '顯示全部');
+    clear.type = 'button';
+    clear.addEventListener('click', () => { focusUser = null; render(); });
+    bar.append(clear);
+  }
+}
+
 function renderGrid(now) {
   const body = $('gridBody');
   body.replaceChildren();
@@ -968,7 +1146,11 @@ function renderGrid(now) {
       // 依時長決定排版：2 小時以上放大文字，3 小時以上加顯示備註
       if (b.duration >= 2) block.classList.add('is-tall');
       if (b.duration >= 3) block.classList.add('is-huge');
-      block.append(title, el('span', 'b-name', b.name));
+      const who = el('span', 'b-name');
+      who.append(avatar(b.name), el('span', 'b-name-text', b.name));
+      block.style.setProperty('--user', userColor(b.name));
+      if (focusUser) block.classList.add(userKey(b.name) === focusUser ? 'is-focused' : 'is-dimmed');
+      block.append(title, who);
       if (b.note) block.append(el('span', 'b-note', b.note));
       block.append(el('span', 'b-time', formatHourRange(b.startHour, endHour)));
       block.setAttribute('aria-label',
@@ -1083,6 +1265,8 @@ function openBookDialog(roomId, date, startHour) {
 
   $('bookForm').reset();
   $('bookName').value = getLastName();
+  avatarPicked = false;
+  renderAvatarOptions($('bookName').value, userSymbol($('bookName').value));
   setFieldError('bookNameField', 'bookNameError', '');
   setFieldError('bookTitleField', 'bookTitleError', '');
   setFieldError('bookRepeatEndField', 'bookRepeatEndError', '');
@@ -1101,6 +1285,39 @@ function openBookDialog(roomId, date, startHour) {
 
   $('bookDialog').showModal();
   ($('bookName').value ? $('bookTitle') : $('bookName')).focus();
+}
+
+// 頭像符號選項：第一個是姓名第一個字，其餘為可選符號，顏色都跟著姓名
+function renderAvatarOptions(name, selected) {
+  const box = $('bookAvatarOptions');
+  box.replaceChildren();
+  for (const symbol of ['', ...AVATAR_SYMBOLS]) {
+    const label = el('label');
+    label.title = symbol ? `使用 ${symbol}` : '使用姓名第一個字';
+    const input = el('input');
+    input.type = 'radio';
+    input.name = 'bookAvatar';
+    input.value = symbol;
+    input.checked = symbol === selected;
+    input.setAttribute('aria-label', label.title);
+    label.append(input, avatar(name, symbol));
+    box.append(label);
+  }
+}
+
+function selectedAvatar() {
+  const checked = document.querySelector('input[name="bookAvatar"]:checked');
+  return checked ? checked.value : '';
+}
+
+let avatarPicked = false;  // 這次開啟表單後，使用者是否自己點選過頭像符號
+
+// 輸入姓名時更新預覽：這個名字已有偏好就選上；沒有偏好時，
+// 自己點選過的符號保留，否則回到姓名第一個字（避免沿用前一個名字的符號）
+function onBookNameInput() {
+  setFieldError('bookNameField', 'bookNameError', '');
+  const name = $('bookName').value;
+  renderAvatarOptions(name, userSymbol(name) || (avatarPicked ? selectedAvatar() : ''));
 }
 
 function selectedDuration() {
@@ -1185,6 +1402,7 @@ function submitBooking(event) {
 
   if (result.ok) {
     setLastName(name);
+    saveAvatarPref(name, selectedAvatar());
     $('bookDialog').close();
     const room = roomOf(bookCtx.roomId);
     showToast(repeat
@@ -1228,7 +1446,9 @@ function openDetailDialog(id) {
   const list = $('detailList');
   list.replaceChildren();
   const addRow = (label, value, cls) => list.append(el('dt', null, label), el('dd', cls, value));
-  addRow('預約人', b.name);
+  const who = el('dd', 'who');
+  who.append(avatar(b.name), el('span', null, b.name));
+  list.append(el('dt', null, '預約人'), who);
   addRow('時間', `${formatHourRange(b.startHour, b.startHour + b.duration)}，共 ${b.duration} 小時`, 'num');
   if (b.seriesId) {
     const all = bookings.filter(x => x.seriesId === b.seriesId && isActive(x)).map(x => x.date).sort();
@@ -1317,10 +1537,58 @@ function confirmCancel() {
   refresh();
 }
 
+// ==================== 匯出 CSV ====================
+
+// CSV 儲存格：防止 Excel 把使用者輸入當公式執行，並處理逗號、引號與換行
+function csvCell(value) {
+  let s = String(value ?? '');
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// 下載目前選定日期的預約清單（不含已取消的場次）
+function exportDayCsv() {
+  refresh();  // 先讀取最新資料，避免匯出畫面上的舊狀態
+  if (storageError) {
+    showToast('資料損毀，無法匯出');
+    return;
+  }
+  const roomOrder = id => ROOMS.findIndex(r => r.id === id);
+  const list = bookings
+    .filter(b => isActive(b) && b.date === viewDate)
+    .sort((a, b) => roomOrder(a.roomId) - roomOrder(b.roomId) || a.startHour - b.startHour);
+  if (list.length === 0) {
+    showToast('這一天沒有預約可以匯出');
+    return;
+  }
+
+  const rows = [['會議室', '時段', '預約人']];
+  for (const b of list) {
+    rows.push([
+      roomOf(b.roomId)?.name ?? b.roomId,
+      formatHourRange(b.startHour, b.startHour + b.duration),
+      String(b.name).trim(),
+    ]);
+  }
+  // 開頭加 BOM，Excel 開啟時中文才不會變亂碼
+  const csv = '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = el('a');
+  link.href = url;
+  link.download = `會議室預約_${viewDate}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  showToast(`已匯出 ${list.length} 筆預約`);
+}
+
 // ==================== 事件綁定與初始化 ====================
 $('prevDayBtn').addEventListener('click', () => setViewDate(addDays(viewDate, -1)));
 $('nextDayBtn').addEventListener('click', () => setViewDate(addDays(viewDate, 1)));
 $('todayBtn').addEventListener('click', () => setViewDate(taipeiNow().date));
+$('exportCsvBtn').addEventListener('click', exportDayCsv);
 $('datePicker').addEventListener('change', e => {
   if (e.target.value) setViewDate(e.target.value);
 });
@@ -1344,7 +1612,8 @@ $('bookRepeat').addEventListener('change', e => {
   if (!e.target.checked) $('bookSubmitBtn').textContent = '預約';
 });
 $('bookRepeatEnd').addEventListener('input', updateRepeatPreview);
-$('bookName').addEventListener('input', () => setFieldError('bookNameField', 'bookNameError', ''));
+$('bookName').addEventListener('input', onBookNameInput);
+$('bookAvatarOptions').addEventListener('change', () => { avatarPicked = true; });
 $('bookTitle').addEventListener('input', () => setFieldError('bookTitleField', 'bookTitleError', ''));
 
 $('detailCloseBtn').addEventListener('click', () => $('detailDialog').close());
@@ -1363,7 +1632,7 @@ for (const dialog of document.querySelectorAll('dialog.sheet')) {
 
 // 其他分頁寫入時同步重繪
 window.addEventListener('storage', e => {
-  if (e.key === STORAGE_KEY || e.key === null) refresh();
+  if (e.key === STORAGE_KEY || e.key === AVATAR_KEY || e.key === null) refresh();
 });
 // 每 60 秒重新讀取資料並重繪（同時更新「已過去」的時段與時間線）
 setInterval(refresh, REFRESH_MS);
