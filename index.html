@@ -651,6 +651,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="app.js"></script>
 <script>
 'use strict';
 
@@ -776,13 +777,7 @@ function genId() {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
-function isActive(b) {
-  return !b.cancelled;
-}
-
-function coversHour(b, hour) {
-  return hour >= b.startHour && hour < b.startHour + b.duration;
-}
+// isActive、coversHour 與撞期檢查 findConflicts 定義在 app.js
 
 /**
  * 新增預約的唯一入口：讀取最新資料 → 檢查時間範圍與撞期 → 立即寫回。
@@ -812,18 +807,7 @@ function commitBookings(newBookings) {
   }
 
   // 撞期檢查：同會議室、同日期、同小時是否已有未取消的預約（也檢查本批彼此之間）
-  const occupied = data.bookings.filter(isActive);
-  const conflicts = [];
-  for (const b of newBookings) {
-    const hours = [];
-    for (let h = b.startHour; h < b.startHour + b.duration; h++) {
-      if (occupied.some(o => o.roomId === b.roomId && o.date === b.date && coversHour(o, h))) {
-        hours.push(h);
-      }
-    }
-    if (hours.length > 0) conflicts.push({ date: b.date, hours });
-    occupied.push(b);
-  }
+  const conflicts = findConflicts(data.bookings, newBookings);
   if (conflicts.length > 0) return { ok: false, reason: 'conflict', conflicts };
 
   data.bookings.push(...newBookings);

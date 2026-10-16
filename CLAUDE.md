@@ -10,13 +10,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 開發規範
 
-- 本專案為**單一 HTML 檔案**，檔名固定為 `index.html`。HTML、CSS、JavaScript 全部寫在這個檔案裡，禁止拆分成多個檔案，也禁止引入外部框架或函式庫（包含 CDN）。
+- 本專案為 **`index.html` ＋ `app.js` ＋ `test.html` 三檔**，禁止再拆分其他檔案，也禁止引入外部框架或函式庫（包含 CDN）。`app.js` 放撞期檢查等純邏輯，以一般 `<script src="app.js"></script>` 載入（不用 ES module，因為頁面是直接雙擊開啟的）；其餘 HTML、CSS、JavaScript 寫在 `index.html`。
 - 所有介面文字與程式註解都使用**繁體中文**。
 - 每次修改後，用一句話說明改了什麼。
 
 ## 架構
 
-- 純前端：一個 `index.html`，**沒有後端、沒有 SQLite**。
+- 純前端：`index.html` ＋ `app.js`（`test.html` 用於測試），**沒有後端、沒有 SQLite**。
 - 資料存在瀏覽器的 `localStorage`，以 JSON 格式存放；重新整理或重開瀏覽器後資料仍會保留（對應 AC13）。
 - 會議室共 3 間，寫成程式內的常數。
 - 時區固定為 **Asia/Taipei（UTC+8）**。「今天」、「已過去的時段」、「未來 4 週」都以這個時區計算，不要用瀏覽器的本機時區。
